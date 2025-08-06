@@ -1,0 +1,80 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Use Prisma Schema file to define your entities: https://www.prisma.io/docs/concepts/components/prisma-schema.
+// Run `wasp db migrate-dev` in the CLI to create the database tables,
+// then run `wasp db studio` to open Prisma Studio and view your db models.
+model User {
+  id       String @id @default(uuid())
+  username String @unique
+  password String? 
+
+  tasks    Task[]
+  tags     Tag[]
+  name     String @default("")
+  avatar   String @default("")
+  initials String @default("")
+  balance  Float  @default(0)
+  winnings Float  @default(0)
+  rank     Int    @default(0)
+  bets     Bet[]
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  description String
+  isDone      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  tags Tag[]
+}
+
+model Tag {
+  id    String @id @default(uuid())
+  name  String @unique
+  color String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  tasks Task[]
+}
+
+model BettingLine {
+  id          String  @id @default(cuid())
+  event       String  @default("")
+  date        String  @default("")
+  time        String  @default("")
+  team1       String  @default("")
+  team2       String  @default("")
+  odds1       Float   @default(0)
+  odds2       Float   @default(0)
+  total       Float   @default(0)
+  overOdds    Float   @default(0)
+  underOdds   Float   @default(0)
+  isMoneyline Boolean @default(false)
+  category    String  @default("")
+  bets        Bet[]
+}
+
+model Bet {
+  id           String      @id @default(cuid())
+  user         User        @relation(fields: [userId], references: [id])
+  userId       String
+  line         BettingLine @relation(fields: [lineId], references: [id])
+  lineId       String
+  amount       Float       @default(0)
+  selection    String      @default("")
+  potentialWin Float       @default(0)
+  status       String      @default("")
+  date         String      @default("")
+}
