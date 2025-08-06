@@ -16,9 +16,6 @@ app bettingDashboard {
     onAuthSucceededRedirectTo: "/",
     onAuthFailedRedirectTo: "/login",
   },
-  emailSender: {
-    provider: Dummy,
-  },
   client: {
     rootComponent: import { App } from "@src/App.tsx",
   }
