@@ -77,4 +77,5 @@ model Bet {
   potentialWin Float       @default(0)
   status       String      @default("")
   date         String      @default("")
+  realDate     DateTime    @default(now())
 }

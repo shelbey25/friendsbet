@@ -8,7 +8,8 @@ import { Input } from "../components/ui/input"
 import { Badge } from "../components/ui/badge"
 import { Avatar, AvatarFallback } from "../components/ui/avatar"
 import { ArrowUpRight, ArrowDownRight, TrendingUp, Trophy, Clock, DollarSign } from "lucide-react"
-import { useQuery, getBettingLines, getAllUsers } from 'wasp/client/operations'
+import { useQuery, getBettingLines, getAllUsers, createBet, getAllBets } from 'wasp/client/operations'
+import { BetWithLine } from "wasp/src/bet/queries"
 
 
 const BettingLinesSkeleton = () => (
@@ -61,6 +62,24 @@ const LeaderboardSkeleton = () => (
   </div>
 )
 
+const RecentBetsSkeleton = () => (
+  <div className="space-y-4">
+    {[1, 2, 3].map((i) => (
+      <div key={i} className="p-3 bg-gray-50 rounded-md">
+        <div className="flex justify-between items-start mb-2">
+          <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-5 w-16 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+        <div className="h-3 w-48 bg-gray-200 rounded animate-pulse mb-2"></div>
+        <div className="flex justify-between items-center">
+          <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-3 w-24 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
 // Types
 interface BettingLine {
   id: string
@@ -78,53 +97,9 @@ interface BettingLine {
   category: string
 }
 
-interface Bet {
-  id: string
-  user: string
-  line: string
-  amount: number
-  selection: string
-  potentialWin: number
-  status: "pending" | "won" | "lost"
-  date: string
-}
+
 
 // Mock data
-
-
-
-const recentBets: Bet[] = [
-  {
-    id: "1",
-    user: "You",
-    line: "Kansas City Chiefs vs Las Vegas Raiders",
-    amount: 100,
-    selection: "Kansas City Chiefs",
-    potentialWin: 31.25,
-    status: "pending",
-    date: "Nov 10, 2023",
-  },
-  {
-    id: "2",
-    user: "You",
-    line: "Boston Celtics vs New York Knicks",
-    amount: 50,
-    selection: "Over 218.5",
-    potentialWin: 47.62,
-    status: "won",
-    date: "Nov 8, 2023",
-  },
-  {
-    id: "3",
-    user: "You",
-    line: "Manchester City vs Liverpool",
-    amount: 75,
-    selection: "Under 2.5",
-    potentialWin: 90.00,
-    status: "lost",
-    date: "Nov 7, 2023",
-  },
-]
 
 export function BettingDashboard() {
 
@@ -132,6 +107,8 @@ export function BettingDashboard() {
 
 
   const { data: leaderboardData, isLoading: isLoadingLeaderboard } = useQuery(getAllUsers)
+
+  const { data: recentBets, isLoading: isLoadingBets } = useQuery(getAllBets)
 
 
   const [selectedLine, setSelectedLine] = useState<BettingLine | null>(null)
@@ -181,13 +158,22 @@ export function BettingDashboard() {
     } else if (selectedTeam === "under") {
       selectionText = `Under ${selectedLine?.total}`
     }
+    void (async () => {
+    await createBet({
+      lineId: selectedLine?.id || "",
+      amount: parseFloat(betAmount),
+      selection: selectionText,
+      potentialWin: parseFloat(calculatePotentialWin().toFixed(2)),
+    }).then(() => {
 
     alert(
-      `Bet placed: $${betAmount} on ${selectionText} to win $${calculatePotentialWin().toFixed(2)}`,
+      `${selectedLine?.event}\nBet placed: $${betAmount} on ${selectionText.toLowerCase()} to win $${calculatePotentialWin().toFixed(2)}`,
     )
     setSelectedLine(null)
     setSelectedTeam(null)
     setBetAmount("10")
+  })
+  })()
   }
 
   const [selectedTab, setSelectedTab] = useState("all")
@@ -529,10 +515,11 @@ export function BettingDashboard() {
                 {isLoadingLeaderboard ? <LeaderboardSkeleton /> : !leaderboardData ? null : leaderboardData.slice(0, 5).map((user, index) => (
                   <div key={user.id} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-800 text-xs font-medium">
+                      <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 text-gray-800 text-xs font-medium">
                         {index+1}
                       </div>
-                      <Avatar>
+                      <Avatar className={"bg-gray-200"
+                      }>
                         <AvatarFallback>{user.initials}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
@@ -558,7 +545,7 @@ export function BettingDashboard() {
             </CardHeader>
             <CardContent >
               <div className="space-y-4">
-                {recentBets.map((bet) => (
+                {isLoadingBets ? <RecentBetsSkeleton /> : !recentBets ? null : recentBets.map((bet: BetWithLine) => (
                   <div key={bet.id} className="p-3 bg-gray-100 rounded-md">
                     <div className="flex justify-between items-start">
                       <div className="text-sm font-medium">{bet.selection}</div>
@@ -569,7 +556,7 @@ export function BettingDashboard() {
                         {bet.status.toUpperCase()}
                       </div>
                     </div>
-                    <div className="mt-1 text-xs text-gray-500">{bet.line}</div>
+                    <div className="mt-1 text-xs text-gray-500">{bet.line.event}</div>
                     <div className="mt-2 flex justify-between text-sm">
                       <span>Bet: ${bet.amount}</span>
                       <div className="flex items-center">

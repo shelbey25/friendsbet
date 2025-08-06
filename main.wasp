@@ -56,6 +56,17 @@ query getAllUsers {
   entities: [User]
 }
 
+query getAllBets {
+  fn: import { getAllBets } from "@src/bet/queries",
+  entities: [Bet]
+}
+
+action createBet {
+  fn: import { createBet } from "@src/bet/actions",
+  entities: [Bet]
+}
+
+
 action createTask {
   fn: import { createTask } from "@src/tasks/actions",
   entities: [Task]
