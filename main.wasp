@@ -38,6 +38,24 @@ page HomePage {
   component: import { HomePage } from "@src/home/HomePage.tsx"
 }
 
+route HistoryRoute { path: "/history", to: HistoryPage }
+page HistoryPage {
+  authRequired: true,
+  component: import { HistoryPage } from "@src/subhome/history/page.tsx"
+}
+
+route LeaderboardRoute { path: "/leaderboard", to: LeaderboardPage }
+page LeaderboardPage {
+  authRequired: true,
+  component: import { LeaderboardPage } from "@src/subhome/leaderboard/page.tsx"
+}
+
+route LinesRoute { path: "/lines", to: LinesPage }
+page LinesPage {
+  authRequired: true,
+  component: import { LinesPage } from "@src/subhome/lines/page.tsx"
+}
+
 query getTasks {
   fn: import { getTasks } from "@src/tasks/queries",
   entities: [Task, Tag]

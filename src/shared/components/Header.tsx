@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Logo from "../../assets/logo.svg";
 import { Button, ButtonLink } from "./Button";
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 export function Header() {
   const { data: user, isLoading } = useAuth()
@@ -15,28 +16,29 @@ export function Header() {
     }
   }, [user, isLoading, navigate])
 
-   if (!isLoading && !user) {
+  const location = useLocation();
+
+   if ((!isLoading && !user) || location.pathname === "/login" || location.pathname === "/signup") {
     return null
    }
+   
+
 
 return <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="text-xl font-bold text-gray-900">
+          <a href="/" className={`text-xl font-bold text-gray-900`}>
             FriendsBet
-          </div>
+          </a>
           <nav className="hidden md:flex items-center space-x-6">
-            <div className="text-sm font-medium text-gray-900">
+            <a href="/" className={`${location.pathname == "/" ? " text-gray-900" : "text-gray-500"} text-sm font-medium`}>
               Dashboard
-            </div>
-            <div className="text-sm font-medium text-gray-500 hover:text-gray-900">
-              Betting Lines
-            </div>
-            <div className="text-sm font-medium text-gray-500 hover:text-gray-900">
+            </a>
+            <a href="/leaderboard"  className={`${location.pathname == "/leaderboard" ? " text-gray-900" : "text-gray-500"} text-sm font-medium`}>
               Leaderboard
-            </div>
-            <div  className="text-sm font-medium text-gray-500 hover:text-gray-900">
+            </a>
+            <a href="/history"   className={`${location.pathname == "/history" ? " text-gray-900" : "text-gray-500"} text-sm font-medium`}>
               History
-            </div>
+            </a>
           </nav>
           <div className="flex items-center">
             <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-gray-100">

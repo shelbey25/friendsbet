@@ -20,8 +20,8 @@ model User {
   name     String @default("")
   avatar   String @default("")
   initials String @default("")
-  balance  Float  @default(0)
-  winnings Float  @default(0)
+  balance  Float  @default(1000)
+  winnings Float  @default(1000)
   rank     Int    @default(0)
   bets     Bet[]
 }

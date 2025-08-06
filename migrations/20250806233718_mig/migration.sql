@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ALTER COLUMN "balance" SET DEFAULT 1000,
+ALTER COLUMN "winnings" SET DEFAULT 1000;

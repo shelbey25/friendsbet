@@ -307,7 +307,7 @@ export function BettingDashboard() {
               ))}
             </TabsContent>
 
-            {bettingLines ? <>{["Get With", "basketball", "baseball", "Misc"].map((category) => (
+            {bettingLines ? <>{["Get With", "Dating", "Achievements", "Misc"].map((category) => (
               <TabsContent key={category} value={category} className="space-y-4">
                 {bettingLines
                   .filter((line) => line.category === category)
@@ -532,9 +532,9 @@ export function BettingDashboard() {
               </div>
             </CardContent>
             <CardFooter className="pt-0">
-              <Button variant="outline" className="w-full bg-transparent">
+              <a href="/leaderboard" className="w-full bg-transparent"><Button variant="outline" className="w-full bg-transparent">
                 View Full Leaderboard
-              </Button>
+              </Button></a>
             </CardFooter>
           </Card>
 
@@ -589,9 +589,9 @@ export function BettingDashboard() {
               </div>
             </CardContent>
             <CardFooter className="pt-0">
-              <Button variant="outline" className="w-full bg-transparent">
+              <a href="/history" className="w-full bg-transparent"><Button variant="outline" className="w-full bg-transparent">
                 View All Bets
-              </Button>
+              </Button></a>
             </CardFooter>
           </Card>
         </div>
