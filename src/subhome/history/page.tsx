@@ -3,8 +3,10 @@ import { Badge } from "../../components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
 import { ArrowUpRight, ArrowDownRight, Clock } from "lucide-react"
 import { useState } from "react"
+import { getAllBets, useQuery } from "wasp/client/operations"
+import { BetWithLine } from "@/bet/queries"
 
-/*const BetHistorySkeleton = () => (
+const BetHistorySkeleton = () => (
   <div className="space-y-4">
     {[1, 2, 3, 4, 5].map((i) => (
       <div key={i} className="p-4 border rounded-lg bg-white">
@@ -25,100 +27,12 @@ import { useState } from "react"
       </div>
     ))}
   </div>
-)*/
+)
 
 export function HistoryPage() {
   // This would come from your database in a real app
-  const bets = [
-    {
-      id: "1",
-      event: "Kansas City Chiefs vs Las Vegas Raiders",
-      selection: "Kansas City Chiefs",
-      odds: -320,
-      amount: 100,
-      potentialWin: 31.25,
-      status: "won",
-      date: "Nov 10, 2023",
-      category: "football",
-    },
-    {
-      id: "2",
-      event: "Boston Celtics vs New York Knicks",
-      selection: "Boston Celtics",
-      odds: -180,
-      amount: 50,
-      potentialWin: 27.78,
-      status: "won",
-      date: "Nov 8, 2023",
-      category: "basketball",
-    },
-    {
-      id: "3",
-      event: "Manchester City vs Liverpool",
-      selection: "Liverpool",
-      odds: +210,
-      amount: 75,
-      potentialWin: 157.5,
-      status: "lost",
-      date: "Nov 7, 2023",
-      category: "soccer",
-    },
-    {
-      id: "4",
-      event: "Los Angeles Dodgers vs New York Yankees",
-      selection: "Los Angeles Dodgers",
-      odds: -110,
-      amount: 110,
-      potentialWin: 100,
-      status: "pending",
-      date: "Nov 13, 2023",
-      category: "baseball",
-    },
-    {
-      id: "5",
-      event: "Jon Jones vs Francis Ngannou",
-      selection: "Jon Jones",
-      odds: -150,
-      amount: 150,
-      potentialWin: 100,
-      status: "pending",
-      date: "Nov 15, 2023",
-      category: "mma",
-    },
-    {
-      id: "6",
-      event: "Dallas Cowboys vs Philadelphia Eagles",
-      selection: "Philadelphia Eagles",
-      odds: -130,
-      amount: 130,
-      potentialWin: 100,
-      status: "lost",
-      date: "Nov 5, 2023",
-      category: "football",
-    },
-    {
-      id: "7",
-      event: "Los Angeles Lakers vs Golden State Warriors",
-      selection: "Los Angeles Lakers",
-      odds: -115,
-      amount: 115,
-      potentialWin: 100,
-      status: "won",
-      date: "Nov 3, 2023",
-      category: "basketball",
-    },
-    {
-      id: "8",
-      event: "Arsenal vs Tottenham",
-      selection: "Arsenal",
-      odds: +120,
-      amount: 100,
-      potentialWin: 120,
-      status: "won",
-      date: "Nov 1, 2023",
-      category: "soccer",
-    },
-  ]
+    const { data: bets, isLoading } = useQuery(getAllBets)
+  
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -162,15 +76,21 @@ export function HistoryPage() {
                 <CardDescription>Your complete betting history</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {bets.map((bet) => (
+                {isLoading ? (
+                  <BetHistorySkeleton />
+                ) : !bets ? null : <div className="space-y-4">
+                  {bets.map((bet: BetWithLine) => (
                     <div key={bet.id} className="p-4 border rounded-lg bg-white">
                       <div className="flex justify-between items-start">
                         <div>
-                          <div className="font-medium">{bet.event}</div>
+                          <div className="font-medium">{bet.line.event}</div>
                           <div className="text-sm text-gray-500 mt-1">
-                            Selection: {bet.selection} ({bet.odds > 0 ? `+${bet.odds}` : bet.odds})
-                          </div>
+                                Selection: {bet.selection} ({bet.line.isMoneyline ? 
+                                (bet.selection === bet.line.team1 ? 
+                                (bet.line.odds1 > 0 ? `+${bet.line.odds1}` : bet.line.odds1) :
+                                (bet.line.odds2 > 0 ? `+${bet.line.odds2}` : bet.line.odds2))
+                                 : bet.line.overOdds})
+                              </div>
                         </div>
                         {getStatusBadge(bet.status)}
                       </div>
@@ -204,7 +124,7 @@ export function HistoryPage() {
                       </div>
                     </div>
                   ))}
-                </div>
+                </div> }
               </CardContent>
             </Card>
           </TabsContent>
@@ -223,16 +143,22 @@ export function HistoryPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  {isLoading ? (
+                  <BetHistorySkeleton />
+                ) : !bets ? null : <div className="space-y-4">
                     {bets
                       .filter((bet) => bet.status === status)
-                      .map((bet) => (
+                      .map((bet: BetWithLine) => (
                         <div key={bet.id} className="p-4 border rounded-lg bg-white">
                           <div className="flex justify-between items-start">
                             <div>
-                              <div className="font-medium">{bet.event}</div>
+                              <div className="font-medium">{bet.line.event}</div>
                               <div className="text-sm text-gray-500 mt-1">
-                                Selection: {bet.selection} ({bet.odds > 0 ? `+${bet.odds}` : bet.odds})
+                                Selection: {bet.selection} ({bet.line.isMoneyline ? 
+                                (bet.selection === bet.line.team1 ? 
+                                (bet.line.odds1 > 0 ? `+${bet.line.odds1}` : bet.line.odds1) :
+                                (bet.line.odds2 > 0 ? `+${bet.line.odds2}` : bet.line.odds2))
+                                 : bet.line.overOdds})
                               </div>
                             </div>
                             {getStatusBadge(bet.status)}
@@ -273,7 +199,7 @@ export function HistoryPage() {
                         <p className="text-gray-500">No {status} bets found.</p>
                       </div>
                     )}
-                  </div>
+                  </div>}
                 </CardContent>
               </Card>
             </TabsContent>
