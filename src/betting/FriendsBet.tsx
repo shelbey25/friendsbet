@@ -12,6 +12,8 @@ import { useQuery, getBettingLines, getAllUsers, createBet, getAllBets } from 'w
 import { BetWithLine } from "wasp/src/bet/queries"
 
 
+//Only place bets depending on how much cash is allotted to a player and remove cash from account
+
 const BettingLinesSkeleton = () => (
   <div className="space-y-4">
     {[1, 2, 3, 4].map((i) => (

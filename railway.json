@@ -1,9 +1,0 @@
-{
-  "build": {
-    "command": "wasp build",
-    "outputDir": ".wasp/build" 
-  },
-  "deploy": {
-    "startCommand": "wasp start"  
-  }
-}
