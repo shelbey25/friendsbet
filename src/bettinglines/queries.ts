@@ -8,6 +8,22 @@ if (!context.user) {
   }
   
   return context.entities.BettingLine.findMany({
-    where: {},
+    where: {
+      status: "open",
+    },
+  });
+};
+
+export const getUnfinalizedBettingLines: GetBettingLines<void, BettingLine[]> = (_, context) => {
+if (!context.user) {
+    throw new HttpError(401);
+  }
+  
+  return context.entities.BettingLine.findMany({
+    where: {
+      status: {
+        in: ["open", "closed"]
+      },
+    },
   });
 };

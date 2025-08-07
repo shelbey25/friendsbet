@@ -2,7 +2,7 @@ app bettingDashboard {
   wasp: {
     version: "^0.17.1"
   },
-  title: "betting-dashboard",
+  title: "FriendsBet",
   head: [
     "<link rel='icon' href='/favicon.ico' />",
   ],
@@ -56,6 +56,12 @@ page LinesPage {
   component: import { LinesPage } from "@src/subhome/lines/page.tsx"
 }
 
+route AdminRoute { path: "/admin", to: AdminPage }
+page AdminPage {
+  authRequired: true,
+  component: import { AdminDashboard } from "@src/admin/Dashboard.tsx"
+}
+
 query getTasks {
   fn: import { getTasks } from "@src/tasks/queries",
   entities: [Task, Tag]
@@ -76,11 +82,35 @@ query getAllBets {
   entities: [Bet]
 }
 
+query getEveryoneBets {
+  fn: import { getEveryoneBets } from "@src/bet/queries",
+  entities: [Bet]
+}
+
+query getUnfinalizedBettingLines {
+  fn: import { getUnfinalizedBettingLines } from "@src/bettinglines/queries",
+  entities: [BettingLine]
+}
+
+action updateBettingLine {
+  fn: import { updateBettingLine } from "@src/bettinglines/actions",
+  entities: [BettingLine]
+}
+
+action setBetResult {
+  fn: import { setBetResult } from "@src/bet/actions",
+  entities: [Bet, User]
+}
+
 action createBet {
   fn: import { createBet } from "@src/bet/actions",
   entities: [Bet]
 }
 
+action updateBalance {
+  fn: import { updateBalance } from "@src/users/actions",
+  entities: [User]
+}
 
 action createTask {
   fn: import { createTask } from "@src/tasks/actions",

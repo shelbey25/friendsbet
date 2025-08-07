@@ -63,6 +63,7 @@ model BettingLine {
   underOdds   Float   @default(0)
   isMoneyline Boolean @default(false)
   category    String  @default("")
+  status      String  @default("open")
   bets        Bet[]
 }
 

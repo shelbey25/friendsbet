@@ -8,8 +8,9 @@ import { Input } from "../components/ui/input"
 import { Badge } from "../components/ui/badge"
 import { Avatar, AvatarFallback } from "../components/ui/avatar"
 import { ArrowUpRight, ArrowDownRight, TrendingUp, Trophy, Clock, DollarSign } from "lucide-react"
-import { useQuery, getBettingLines, getAllUsers, createBet, getAllBets } from 'wasp/client/operations'
+import { useQuery, getBettingLines, getAllUsers, createBet, getAllBets, updateBalance } from 'wasp/client/operations'
 import { BetWithLine } from "wasp/src/bet/queries"
+import { useAuth } from "wasp/client/auth"
 
 
 //Only place bets depending on how much cash is allotted to a player and remove cash from account
@@ -148,6 +149,8 @@ export function BettingDashboard() {
       return amount * (100 / Math.abs(odds))
     }
   }
+  
+  const { data: user } = useAuth()
 
   const handlePlaceBet = () => {
     let selectionText = ""
@@ -161,6 +164,7 @@ export function BettingDashboard() {
       selectionText = `Under ${selectedLine?.total}`
     }
     void (async () => {
+    if (parseFloat(betAmount) <= (user ? user.balance : 0)) {
     await createBet({
       lineId: selectedLine?.id || "",
       amount: parseFloat(betAmount),
@@ -168,6 +172,10 @@ export function BettingDashboard() {
       potentialWin: parseFloat(calculatePotentialWin().toFixed(2)),
     }).then(() => {
 
+      if (user) {
+         updateBalance({ betCost: parseFloat(betAmount) })
+      }
+    
     alert(
       `${selectedLine?.event}\nBet placed: $${betAmount} on ${selectionText.toLowerCase()} to win $${calculatePotentialWin().toFixed(2)}`,
     )
@@ -175,6 +183,11 @@ export function BettingDashboard() {
     setSelectedTeam(null)
     setBetAmount("10")
   })
+} else {
+  alert(
+      `Insufficient balance. Your current balance is $${user ? user.balance : 0}. Please add funds to place this bet.`,
+    )
+}
   })()
   }
 
