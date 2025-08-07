@@ -11,9 +11,9 @@ generator client {
 // Run `wasp db migrate-dev` in the CLI to create the database tables,
 // then run `wasp db studio` to open Prisma Studio and view your db models.
 model User {
-  id       String @id @default(uuid())
-  username String @unique
-  password String? 
+  id       String  @id @default(uuid())
+  username String  @unique
+  password String?
 
   tasks    Task[]
   tags     Tag[]
