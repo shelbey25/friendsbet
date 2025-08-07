@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/ta
 import { ArrowUpRight, ArrowDownRight, Clock } from "lucide-react"
 import { useState } from "react"
 import { getAllBets, useQuery } from "wasp/client/operations"
-import { BetWithLine } from "wasp/server/betting/types"
+import { BetWithLine } from "wasp/src/bet/queries"
 
 const BetHistorySkeleton = () => (
   <div className="space-y-4">
