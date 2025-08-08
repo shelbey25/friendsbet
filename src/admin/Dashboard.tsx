@@ -8,7 +8,6 @@ import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { Badge } from "../components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
-import { Switch } from "../components/ui/switch"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog"
 import { Plus, Edit, Trash2, CheckCircle, Clock, Users, DollarSign, TrendingUp } from 'lucide-react'
@@ -269,9 +268,7 @@ export function AdminDashboard() {
   }
 
   const activeLinesCount = bettingLines.filter(line => line.status === "active").length
-  const totalBetsCount = bets.length
-  const totalBetAmount = bets.reduce((sum, bet) => sum + bet.amount, 0)
-  const pendingBetsCount = bets.filter(bet => bet.status === "pending").length
+ 
 
   const [selectedTab, setSelectedTab] = useState("lines")
 
@@ -287,7 +284,7 @@ export function AdminDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Active Lines</p>
-                <p className="text-2xl font-bold text-gray-900">{activeLinesCount}</p>
+                <p className="text-2xl font-bold text-gray-900">{unfinalizedBets?.length}</p>
               </div>
             </div>
           </CardContent>
@@ -301,7 +298,7 @@ export function AdminDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Bets</p>
-                <p className="text-2xl font-bold text-gray-900">{totalBetsCount}</p>
+                <p className="text-2xl font-bold text-gray-900">{allBets?.length}</p>
               </div>
             </div>
           </CardContent>
@@ -314,8 +311,8 @@ export function AdminDashboard() {
                 <DollarSign className="h-6 w-6 text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Volume</p>
-                <p className="text-2xl font-bold text-gray-900">${totalBetAmount}</p>
+                <p className="text-sm font-medium text-gray-600">Pending Volume</p>
+                <p className="text-2xl font-bold text-gray-900">${allBets?.filter((bet) => bet.status === "pending").reduce((sum, bet) => sum + bet.amount, 0) || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -329,7 +326,7 @@ export function AdminDashboard() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Pending Bets</p>
-                <p className="text-2xl font-bold text-gray-900">{pendingBetsCount}</p>
+                <p className="text-2xl font-bold text-gray-900">{allBets?.filter((bet) => bet.status === "pending").length}</p>
               </div>
             </div>
           </CardContent>
