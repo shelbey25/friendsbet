@@ -12,7 +12,7 @@ import { Switch } from "../components/ui/switch"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog"
 import { Plus, Edit, Trash2, CheckCircle, Clock, Users, DollarSign, TrendingUp } from 'lucide-react'
-import { getEveryoneBets, getUnfinalizedBettingLines, setBetResult, updateBettingLine, useQuery } from "wasp/client/operations"
+import { createBettingLine, getEveryoneBets, getUnfinalizedBettingLines, setBetResult, updateBettingLine, useQuery } from "wasp/client/operations"
 import { BetWithLineAndUser } from "wasp/src/bet/queries"
 
 // Types
@@ -168,18 +168,37 @@ export function AdminDashboard() {
     overOdds: -110,
     underOdds: -110,
     isMoneyline: true,
-    category: "football",
+    category: "Misc",
   })
 
   const handleCreateLine = () => {
-    const line: BettingLine = {
-      id: Date.now().toString(),
-      ...newLine,
-      status: "active",
-      totalBets: 0,
-      totalAmount: 0,
+
+
+    if (!newLine.event || (newLine.isMoneyline && (!newLine.team1 || !newLine.team2))) {
+      alert("Please fill in all required fields.")
+      return
     }
-    setBettingLines([...bettingLines, line])
+
+    void (async () => {
+      await createBettingLine({
+      event: newLine.event,
+      date: newLine.date ? newLine.date : "TBD",
+      team1: newLine.isMoneyline ? newLine.team1 : "",
+      team2: newLine.isMoneyline ? newLine.team2 : "",
+      odds1: newLine.isMoneyline ? newLine.odds1 : 0,
+      odds2: newLine.isMoneyline ? newLine.odds2 : 0,
+      total: !newLine.isMoneyline ? newLine.total : 0,
+      overOdds: !newLine.isMoneyline ? newLine.overOdds : 0,
+      underOdds: !newLine.isMoneyline ? newLine.underOdds : 0,
+      isMoneyline: newLine.isMoneyline,
+      category: newLine.category,
+    }).then(() => {
+       alert("New betting line created successfully!")
+    })
+  })()
+
+    //refetch betting lines
+
     setNewLine({
       event: "",
       date: "",
@@ -335,12 +354,12 @@ export function AdminDashboard() {
                 </div>
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
+                    <Button className="bg-black text-white">
+                      <Plus className="h-4 w-4 mr-2 text-white" />
                       Create Line
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent className="max-w-2xl bg-gray-100">
                     <DialogHeader>
                       <DialogTitle>Create New Betting Line</DialogTitle>
                       <DialogDescription>
@@ -350,26 +369,25 @@ export function AdminDashboard() {
                     <div className="grid gap-4 py-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="event">Event Name</Label>
+                          <Label htmlFor="event" className="mb-2">Event Name</Label>
                           <Input
                             id="event"
                             value={newLine.event}
                             onChange={(e) => setNewLine({...newLine, event: e.target.value})}
-                            placeholder="NFL Week 10"
+                            placeholder="Event"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="category">Category</Label>
+                          <Label htmlFor="category" className="mb-2">Category</Label>
                           <Select value={newLine.category} onValueChange={(value) => setNewLine({...newLine, category: value})}>
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="football">Football</SelectItem>
-                              <SelectItem value="basketball">Basketball</SelectItem>
-                              <SelectItem value="baseball">Baseball</SelectItem>
-                              <SelectItem value="soccer">Soccer</SelectItem>
-                              <SelectItem value="mma">MMA</SelectItem>
+                            <SelectContent className="bg-white">
+                              <SelectItem value="Misc">Misc</SelectItem>
+                              <SelectItem value="Get With">Get With</SelectItem>
+                              <SelectItem value="Dating">Dating</SelectItem>
+                              <SelectItem value="Achievements">Achievements</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -377,7 +395,7 @@ export function AdminDashboard() {
                       
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="date">Date</Label>
+                          <Label htmlFor="date" className="mb-2">Date</Label>
                           <Input
                             id="date"
                             type="date"
@@ -385,53 +403,43 @@ export function AdminDashboard() {
                             onChange={(e) => setNewLine({...newLine, date: e.target.value})}
                           />
                         </div>
-                        <div>
-                          <Label htmlFor="time">Time</Label>
-                          <Input
-                            id="time"
-                            type="time"
-                            value={newLine.time}
-                            onChange={(e) => setNewLine({...newLine, time: e.target.value})}
-                          />
-                        </div>
+                        
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="team1">Team 1 / Fighter 1</Label>
-                          <Input
-                            id="team1"
-                            value={newLine.team1}
-                            onChange={(e) => setNewLine({...newLine, team1: e.target.value})}
-                            placeholder="Kansas City Chiefs"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="team2">Team 2 / Fighter 2</Label>
-                          <Input
-                            id="team2"
-                            value={newLine.team2}
-                            onChange={(e) => setNewLine({...newLine, team2: e.target.value})}
-                            placeholder="Las Vegas Raiders"
-                          />
-                        </div>
-                      </div>
 
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="bet-type"
-                          checked={newLine.isMoneyline}
-                          onCheckedChange={(checked) => setNewLine({...newLine, isMoneyline: checked})}
-                        />
-                        <Label htmlFor="bet-type">
-                          {newLine.isMoneyline ? "Moneyline Betting" : "Over/Under Betting"}
-                        </Label>
+                      <div className="flex items-center space-x-2 w-full">
+                     
+                        <Button variant="outline" className={`flex-grow ${!newLine.isMoneyline ? "bg-gray-100 hover:bg-gray-200" : "bg-black text-white"} `} onClick={() => setNewLine({...newLine, isMoneyline: true})}>
+                        Moneyline Betting
+                      </Button>
+                      <Button variant="outline" className={`flex-grow ${newLine.isMoneyline ? "bg-gray-100 hover:bg-gray-200" : "bg-black text-white"} `} onClick={() => setNewLine({...newLine, isMoneyline: false})}>
+                        Over/Under Betting
+                      </Button>
+               
                       </div>
 
                       {newLine.isMoneyline ? (
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="odds1">Team 1 Odds</Label>
+                          <Label htmlFor="team1" className="mb-2">Result 1</Label>
+                          <Input
+                            id="team1"
+                            value={newLine.team1}
+                            onChange={(e) => setNewLine({...newLine, team1: e.target.value})}
+                            placeholder="Kansas City Chiefs Win"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="team2" className="mb-2">Result 2</Label>
+                          <Input
+                            id="team2"
+                            value={newLine.team2}
+                            onChange={(e) => setNewLine({...newLine, team2: e.target.value})}
+                            placeholder="Las Vegas Raiders Win"
+                          />
+                        </div>
+                          <div>
+                            <Label htmlFor="odds1" className="mb-2">Result 1 Odds</Label>
                             <Input
                               id="odds1"
                               type="number"
@@ -441,7 +449,7 @@ export function AdminDashboard() {
                             />
                           </div>
                           <div>
-                            <Label htmlFor="odds2">Team 2 Odds</Label>
+                            <Label htmlFor="odds2" className="mb-2">Team 2 Odds</Label>
                             <Input
                               id="odds2"
                               type="number"
@@ -454,7 +462,7 @@ export function AdminDashboard() {
                       ) : (
                         <div className="grid grid-cols-3 gap-4">
                           <div>
-                            <Label htmlFor="total">Total Points</Label>
+                            <Label htmlFor="total" className="mb-2">Points Line</Label>
                             <Input
                               id="total"
                               type="number"
@@ -465,7 +473,7 @@ export function AdminDashboard() {
                             />
                           </div>
                           <div>
-                            <Label htmlFor="overOdds">Over Odds</Label>
+                            <Label htmlFor="overOdds" className="mb-2">Over Odds</Label>
                             <Input
                               id="overOdds"
                               type="number"
@@ -475,7 +483,7 @@ export function AdminDashboard() {
                             />
                           </div>
                           <div>
-                            <Label htmlFor="underOdds">Under Odds</Label>
+                            <Label htmlFor="underOdds" className="mb-2">Under Odds</Label>
                             <Input
                               id="underOdds"
                               type="number"
@@ -491,7 +499,7 @@ export function AdminDashboard() {
                       <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                         Cancel
                       </Button>
-                      <Button onClick={handleCreateLine}>Create Line</Button>
+                      <Button onClick={handleCreateLine} className="bg-black text-white">Create Line</Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>

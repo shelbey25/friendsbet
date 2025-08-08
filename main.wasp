@@ -97,6 +97,11 @@ action updateBettingLine {
   entities: [BettingLine]
 }
 
+action createBettingLine {
+  fn: import { createBettingLine } from "@src/bettinglines/actions",
+  entities: [BettingLine]
+}
+
 action setBetResult {
   fn: import { setBetResult } from "@src/bet/actions",
   entities: [Bet, User]

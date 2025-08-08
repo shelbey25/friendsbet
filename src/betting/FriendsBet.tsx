@@ -560,7 +560,7 @@ export function BettingDashboard() {
             </CardHeader>
             <CardContent >
               <div className="space-y-4">
-                {isLoadingBets ? <RecentBetsSkeleton /> : !recentBets ? null : recentBets.map((bet: BetWithLine) => (
+                {isLoadingBets ? <RecentBetsSkeleton /> : !recentBets ? null : recentBets.slice(0,3).map((bet: BetWithLine) => (
                   <div key={bet.id} className="p-3 bg-gray-100 rounded-md">
                     <div className="flex justify-between items-start">
                       <div className="text-sm font-medium">{bet.selection}</div>
