@@ -97,6 +97,11 @@ query getAllBettingLines {
   entities: [BettingLine]
 }
 
+action updateBettingLineFull {
+  fn: import { updateBettingLineFull } from "@src/bettinglines/actions",
+  entities: [BettingLine]
+}
+
 action updateBettingLine {
   fn: import { updateBettingLine } from "@src/bettinglines/actions",
   entities: [BettingLine]

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog"
 import { Plus, Edit, Trash2, CheckCircle, Clock, Users, DollarSign, TrendingUp, Loader2 } from 'lucide-react'
-import { createBettingLine, getAllBettingLines, getEveryoneBets, getUnfinalizedBettingLines, setBetResult, updateBettingLine, useQuery } from "wasp/client/operations"
+import { createBettingLine, getAllBettingLines, getEveryoneBets, getUnfinalizedBettingLines, setBetResult, updateBettingLine, updateBettingLineFull, useQuery } from "wasp/client/operations"
 import { BetWithLineAndUser } from "wasp/src/bet/queries"
 
 // Types
@@ -89,10 +89,28 @@ export function AdminDashboard() {
 
  const statusOrder = { "pending": 1, "won": 2, "lost": 3 };
 
+ const [updatingLine, setUpdatingLine] = useState(false)
+
+ const [isEditLine, setIsEditLine] = useState(false)
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   //const [editingLine, setEditingLine] = useState<BettingLine | null>(null)
   const [newLine, setNewLine] = useState({
+    event: "",
+    date: "",
+    time: "",
+    team1: "",
+    team2: "",
+    odds1: -110,
+    odds2: -110,
+    total: 0,
+    overOdds: -110,
+    underOdds: -110,
+    isMoneyline: true,
+    category: "Misc",
+  })
+
+  const [editLine, setEditLine] = useState({
     event: "",
     date: "",
     time: "",
@@ -153,16 +171,52 @@ export function AdminDashboard() {
       overOdds: -110,
       underOdds: -110,
       isMoneyline: true,
-      category: "football",
+      category: "Misc",
     })
     setIsCreateDialogOpen(false)
+  }
+
+  const [updatingLineContent, setUpdatingLineContent] = useState(false)
+
+  const handleUpdateLine = (lineId: string) => {
+
+
+    if (!editLine.event || (editLine.isMoneyline && (!editLine.team1 || !editLine.team2))) {
+      alert("Please fill in all required fields.")
+      return
+    }
+    setUpdatingLineContent(true)
+
+    void (async () => {
+      await updateBettingLineFull({
+        id: lineId,
+      event: editLine.event,
+      date: editLine.date ? editLine.date : "TBD",
+      team1: editLine.isMoneyline ? editLine.team1 : "",
+      team2: editLine.isMoneyline ? editLine.team2 : "",
+      odds1: editLine.isMoneyline ? editLine.odds1 : 0,
+      odds2: editLine.isMoneyline ? editLine.odds2 : 0,
+      total: !editLine.isMoneyline ? editLine.total : 0,
+      overOdds: !editLine.isMoneyline ? editLine.overOdds : 0,
+      underOdds: !editLine.isMoneyline ? editLine.underOdds : 0,
+      isMoneyline: editLine.isMoneyline,
+      category: editLine.category,
+    }).then(() => {
+      refetchBettingLines()
+      setUpdatingLineContent(false)
+      alert("Betting line successfully updated!")
+       
+    })
+  })()
+
+    setIsEditLine(false)
   }
 
   const [settingResult, setSettingResult] = useState(false)
 
   const handleSetResult = (lineId: string, result: string) => {
     setSettingResult(true)
-    updateBettingLine({lineId}).then(() => {
+    updateBettingLine({lineId: lineId, statusUpdate: "complete"}).then(() => {
       setBetResult({
       lineId,
       correctSelection: result,
@@ -293,6 +347,28 @@ export function AdminDashboard() {
           </div>
                   </DialogContent>
                 </Dialog>
+
+                <Dialog open={updatingLine} >
+                  <DialogContent className="max-w-2xl bg-gray-100">
+                    <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
+            <span className="text-gray-600">Closing line...</span>
+          </div>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={updatingLineContent} >
+                  <DialogContent className="max-w-2xl bg-gray-100">
+                    <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
+            <span className="text-gray-600">Updating line...</span>
+          </div>
+                  </DialogContent>
+                </Dialog>
+
+
+
+
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-black text-white">
@@ -444,6 +520,8 @@ export function AdminDashboard() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+
+
               </div>
             </CardHeader>
             <CardContent>
@@ -462,7 +540,7 @@ export function AdminDashboard() {
                         </div>
                         <h3 className="font-semibold text-lg">{line.event}</h3>
                         <p className="text-sm text-gray-600 mb-2">
-                          {line.team1 ? line.team1 : "O"}{line.team2 ? " vs " : "/"}{line.team2 ? line.team2 : "U"} • {line.date}
+                          {line.team1 ? line.team1 : "O"}{line.team2 ? " vs " : "/"}{line.team2 ? line.team2 : "U"}  {"(" + (line.team1 ? (line.odds1 > 0 ? "+" + line.odds1 : line.odds1) + "/" + (line.odds2 > 0 ? "+" + line.odds2 : line.odds2) : line.total) + ")"} • {line.date}
                         </p>
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
                           <span>{line.bets.length} bets</span>
@@ -470,9 +548,187 @@ export function AdminDashboard() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        {line.status === "open" ? <Button variant="outline" size="sm" className="hover:bg-gray-200">
+                        {line.status === "open" ? <><Button variant="outline" size="sm" className="hover:bg-gray-200" onClick={
+                          () => {
+                            setUpdatingLine(true)
+                            updateBettingLine({lineId: line.id, statusUpdate: "closed"}).then(() => {
+      refetchBettingLines()
+      setUpdatingLine(false)
+      alert(`Betting line successfully closed!`)
+     })
+                          }
+                        }>
                           Close Line
-                        </Button> : null}
+                        </Button>
+
+
+                        <Dialog open={isEditLine} onOpenChange={setIsEditLine}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setEditLine({
+                        event: line.event,
+                        date: line.date,
+                        time: "",
+                        team1: line.team1,
+                        team2: line.team2,
+                        odds1: line.odds1,
+                        odds2: line.odds2,
+                        total: line.total,
+                        overOdds: line.overOdds,
+                        underOdds: line.underOdds,
+                        isMoneyline: line.isMoneyline,
+                        category: line.category,
+                        })
+                    }}> 
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl bg-gray-100">
+                    <DialogHeader>
+                      <DialogTitle>Update Betting Line</DialogTitle>
+                      <DialogDescription>
+                        Set up a new betting line for users to bet on
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="event" className="mb-2">Event Name</Label>
+                          <Input
+                            id="event"
+                            value={editLine.event}
+                            onChange={(e) => setEditLine({...editLine, event: e.target.value})}
+                            placeholder="Event"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="category" className="mb-2">Category</Label>
+                          <Select value={editLine.category} onValueChange={(value) => setEditLine({...editLine, category: value})}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white">
+                              <SelectItem value="Misc">Misc</SelectItem>
+                              <SelectItem value="Get With">Get With</SelectItem>
+                              <SelectItem value="Dating">Dating</SelectItem>
+                              <SelectItem value="Achievements">Achievements</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="date" className="mb-2">Date</Label>
+                          <Input
+                            id="date"
+                            type="date"
+                            value={editLine.date}
+                            onChange={(e) => setEditLine({...editLine, date: e.target.value})}
+                          />
+                        </div>
+                        
+                      </div>
+
+
+                      <div className="flex items-center space-x-2 w-full">
+                     
+                        <Button variant="outline" className={`flex-grow ${!editLine.isMoneyline ? "bg-gray-100 hover:bg-gray-200" : "bg-black text-white"} `} onClick={() => setEditLine({...editLine, isMoneyline: true})}>
+                        Moneyline Betting
+                      </Button>
+                      <Button variant="outline" className={`flex-grow ${editLine.isMoneyline ? "bg-gray-100 hover:bg-gray-200" : "bg-black text-white"} `} onClick={() => setEditLine({...editLine, isMoneyline: false})}>
+                        Over/Under Betting
+                      </Button>
+               
+                      </div>
+
+                      {editLine.isMoneyline ? (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                          <Label htmlFor="team1" className="mb-2">Result 1</Label>
+                          <Input
+                            id="team1"
+                            value={editLine.team1}
+                            onChange={(e) => setEditLine({...editLine, team1: e.target.value})}
+                            placeholder="Kansas City Chiefs Win"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="team2" className="mb-2">Result 2</Label>
+                          <Input
+                            id="team2"
+                            value={editLine.team2}
+                            onChange={(e) => setEditLine({...editLine, team2: e.target.value})}
+                            placeholder="Las Vegas Raiders Win"
+                          />
+                        </div>
+                          <div>
+                            <Label htmlFor="odds1" className="mb-2">Result 1 Odds</Label>
+                            <Input
+                              id="odds1"
+                              type="number"
+                              value={editLine.odds1}
+                              onChange={(e) => setEditLine({...editLine, odds1: Number(e.target.value)})}
+                              placeholder="-110"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="odds2" className="mb-2">Team 2 Odds</Label>
+                            <Input
+                              id="odds2"
+                              type="number"
+                              value={editLine.odds2}
+                              onChange={(e) => setEditLine({...editLine, odds2: Number(e.target.value)})}
+                              placeholder="-110"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <Label htmlFor="total" className="mb-2">Points Line</Label>
+                            <Input
+                              id="total"
+                              type="number"
+                              step="0.5"
+                              value={editLine.total}
+                              onChange={(e) => setEditLine({...editLine, total: Number(e.target.value)})}
+                              placeholder="218.5"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="overOdds" className="mb-2">Over Odds</Label>
+                            <Input
+                              id="overOdds"
+                              type="number"
+                              value={editLine.overOdds}
+                              onChange={(e) => setEditLine({...editLine, overOdds: Number(e.target.value)})}
+                              placeholder="-110"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="underOdds" className="mb-2">Under Odds</Label>
+                            <Input
+                              id="underOdds"
+                              type="number"
+                              value={editLine.underOdds}
+                              onChange={(e) => setEditLine({...editLine, underOdds: Number(e.target.value)})}
+                              placeholder="-110"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={() => {handleUpdateLine(line.id)}} className="bg-black text-white">Update Line</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+                        </> : null}
+                        
                         {/*<AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="outline" size="sm">
