@@ -64,6 +64,7 @@ model BettingLine {
   isMoneyline Boolean @default(false)
   category    String  @default("")
   status      String  @default("open")
+  winner      String  @default("")
   bets        Bet[]
 }
 

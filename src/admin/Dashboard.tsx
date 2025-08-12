@@ -10,149 +10,86 @@ import { Badge } from "../components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog"
-import { Plus, Edit, Trash2, CheckCircle, Clock, Users, DollarSign, TrendingUp } from 'lucide-react'
-import { createBettingLine, getEveryoneBets, getUnfinalizedBettingLines, setBetResult, updateBettingLine, useQuery } from "wasp/client/operations"
+import { Plus, Edit, Trash2, CheckCircle, Clock, Users, DollarSign, TrendingUp, Loader2 } from 'lucide-react'
+import { createBettingLine, getAllBettingLines, getEveryoneBets, getUnfinalizedBettingLines, setBetResult, updateBettingLine, useQuery } from "wasp/client/operations"
 import { BetWithLineAndUser } from "wasp/src/bet/queries"
 
 // Types
-interface BettingLine {
-  id: string
-  event: string
-  date: string
-  time: string
-  team1: string
-  team2: string
-  odds1: number
-  odds2: number
-  total?: number
-  overOdds?: number
-  underOdds?: number
-  isMoneyline: boolean
-  category: string
-  status: "active" | "completed" | "cancelled"
-  result?: "team1" | "team2" | "over" | "under" | "cancelled"
-  totalBets: number
-  totalAmount: number
-}
+const StatsCardSkeleton = () => (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center">
+          <div className="p-2 bg-gray-100 rounded-lg animate-pulse">
+            <div className="h-6 w-6 bg-gray-200 rounded"></div>
+          </div>
+          <div className="ml-4 space-y-2">
+            <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-8 w-12 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
 
-interface Bet {
-  id: string
-  userId: string
-  userName: string
-  lineId: string
-  lineName: string
-  selection: string
-  amount: number
-  potentialWin: number
-  status: "pending" | "won" | "lost"
-  date: string
-}
+  const BettingLinesSkeleton = () => (
+    <div className="space-y-4">
+      {[1, 2, 3].map((i) => (
+        <Card key={i} className="p-4">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <div className="flex space-x-2">
+                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="h-5 w-48 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div className="space-y-2">
+              <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  )
 
-// Mock data
-const initialBettingLines: BettingLine[] = [
-  {
-    id: "1",
-    event: "NFL Week 10",
-    date: "2024-11-12",
-    time: "13:00",
-    team1: "Kansas City Chiefs",
-    team2: "Las Vegas Raiders",
-    odds1: -320,
-    odds2: +260,
-    isMoneyline: true,
-    category: "football",
-    status: "active",
-    totalBets: 15,
-    totalAmount: 2500,
-  },
-  {
-    id: "2",
-    event: "NBA Regular Season",
-    date: "2024-11-11",
-    time: "19:30",
-    team1: "Boston Celtics",
-    team2: "New York Knicks",
-    total: 218.5,
-    overOdds: -105,
-    underOdds: -115,
-    odds1: 0,
-    odds2: 0,
-    isMoneyline: false,
-    category: "basketball",
-    status: "completed",
-    result: "over",
-    totalBets: 8,
-    totalAmount: 1200,
-  },
-  {
-    id: "3",
-    event: "Premier League",
-    date: "2024-11-14",
-    time: "10:00",
-    team1: "Manchester City",
-    team2: "Liverpool",
-    total: 2.5,
-    overOdds: -140,
-    underOdds: +120,
-    odds1: 0,
-    odds2: 0,
-    isMoneyline: false,
-    category: "soccer",
-    status: "active",
-    totalBets: 12,
-    totalAmount: 1800,
-  },
-]
+  const BetsSkeleton = () => (
+    <div className="space-y-4">
+      {[1, 2, 3, 4].map((i) => (
+        <Card key={i} className="p-4">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <div className="flex space-x-2">
+                <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="h-5 w-40 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div className="text-right space-y-2">
+              <div className="h-5 w-16 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  )
 
-const mockBets: Bet[] = [
-  {
-    id: "1",
-    userId: "user1",
-    userName: "Alex Johnson",
-    lineId: "1",
-    lineName: "Kansas City Chiefs vs Las Vegas Raiders",
-    selection: "Kansas City Chiefs",
-    amount: 100,
-    potentialWin: 31.25,
-    status: "pending",
-    date: "2024-11-10",
-  },
-  {
-    id: "2",
-    userId: "user2",
-    userName: "Sarah Williams",
-    lineId: "2",
-    lineName: "Boston Celtics vs New York Knicks",
-    selection: "Over 218.5",
-    amount: 50,
-    potentialWin: 47.62,
-    status: "won",
-    date: "2024-11-08",
-  },
-  {
-    id: "3",
-    userId: "user3",
-    userName: "Mike Thompson",
-    lineId: "3",
-    lineName: "Manchester City vs Liverpool",
-    selection: "Under 2.5",
-    amount: 75,
-    potentialWin: 90.00,
-    status: "pending",
-    date: "2024-11-07",
-  },
-]
 
 export function AdminDashboard() {
-  const [bettingLines, setBettingLines] = useState<BettingLine[]>(initialBettingLines)
 
  const { data: unfinalizedBets, isLoading: isLoadingUnfinalizedBets } = useQuery(getUnfinalizedBettingLines)
 
  const { data: allBets, isLoading: isLoadingAllBets } = useQuery(getEveryoneBets)
 
- 
+ const { data: bettingLines, isLoading: isLoadingBettingLines, refetch: refetchBettingLines } = useQuery(getAllBettingLines)
 
-  const [bets, setBets] = useState<Bet[]>(mockBets)
+ const statusOrder = { "pending": 1, "won": 2, "lost": 3 };
+
+
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   //const [editingLine, setEditingLine] = useState<BettingLine | null>(null)
   const [newLine, setNewLine] = useState({
@@ -170,6 +107,8 @@ export function AdminDashboard() {
     category: "Misc",
   })
 
+  const [creatingLine, setCreatingLine] = useState(false)
+
   const handleCreateLine = () => {
 
 
@@ -177,6 +116,7 @@ export function AdminDashboard() {
       alert("Please fill in all required fields.")
       return
     }
+    setCreatingLine(true)
 
     void (async () => {
       await createBettingLine({
@@ -192,7 +132,10 @@ export function AdminDashboard() {
       isMoneyline: newLine.isMoneyline,
       category: newLine.category,
     }).then(() => {
+      refetchBettingLines()
+      setCreatingLine(false)
        alert("New betting line created successfully!")
+       
     })
   })()
 
@@ -215,12 +158,16 @@ export function AdminDashboard() {
     setIsCreateDialogOpen(false)
   }
 
+  const [settingResult, setSettingResult] = useState(false)
+
   const handleSetResult = (lineId: string, result: string) => {
+    setSettingResult(true)
     updateBettingLine({lineId}).then(() => {
       setBetResult({
       lineId,
       correctSelection: result,
      }).then(() => {
+      setSettingResult(false)
       alert(`Bet successfully reconciled!`)
      })
     })
@@ -232,18 +179,17 @@ export function AdminDashboard() {
   }
 
   const handleDeleteLine = (lineId: string) => {
-    setBettingLines(lines => lines.filter(line => line.id !== lineId))
-    setBets(currentBets => currentBets.filter(bet => bet.lineId !== lineId))
+
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "active":
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>
-      case "completed":
+      case "open":
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Open</Badge>
+      case "complete":
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Completed</Badge>
-      case "cancelled":
-        return <Badge variant="destructive">Cancelled</Badge>
+      case "closed":
+        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Closed</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
@@ -252,31 +198,21 @@ export function AdminDashboard() {
   const getResultBadge = (result?: string) => {
     if (!result) return null
     
-    const colors = {
-      team1: "bg-purple-100 text-purple-800",
-      team2: "bg-purple-100 text-purple-800", 
-      over: "bg-orange-100 text-orange-800",
-      under: "bg-orange-100 text-orange-800",
-      cancelled: "bg-gray-100 text-gray-800"
-    }
-    
+  
     return (
-      <Badge className={`${colors[result as keyof typeof colors]} hover:${colors[result as keyof typeof colors]}`}>
+      <Badge className={`bg-orange-100 text-orange-800`}>
         {result.charAt(0).toUpperCase() + result.slice(1)}
       </Badge>
     )
   }
-
-  const activeLinesCount = bettingLines.filter(line => line.status === "active").length
  
 
   const [selectedTab, setSelectedTab] = useState("lines")
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
+        {!unfinalizedBets ? <StatsCardSkeleton/> : <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -288,9 +224,9 @@ export function AdminDashboard() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card>}
         
-        <Card>
+        {!allBets ? <StatsCardSkeleton/> : <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
@@ -302,9 +238,9 @@ export function AdminDashboard() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card>}
         
-        <Card>
+        {!allBets ? <StatsCardSkeleton/> : <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="p-2 bg-yellow-100 rounded-lg">
@@ -316,9 +252,9 @@ export function AdminDashboard() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card>}
         
-        <Card>
+        {!allBets ? <StatsCardSkeleton/> : <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="p-2 bg-purple-100 rounded-lg">
@@ -330,7 +266,7 @@ export function AdminDashboard() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card>}
       </div>
 
       <Tabs defaultValue="lines" className="w-full" value={selectedTab} onValueChange={setSelectedTab}>
@@ -349,6 +285,14 @@ export function AdminDashboard() {
                   <CardTitle>Manage Betting Lines</CardTitle>
                   <CardDescription>Create, edit, and manage betting lines</CardDescription>
                 </div>
+                <Dialog open={creatingLine} >
+                  <DialogContent className="max-w-2xl bg-gray-100">
+                    <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
+            <span className="text-gray-600">Creating line...</span>
+          </div>
+                  </DialogContent>
+                </Dialog>
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-black text-white">
@@ -503,33 +447,33 @@ export function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              {isLoadingBettingLines ? <BettingLinesSkeleton /> : !bettingLines ? null : <div className="space-y-4">
                 {bettingLines.map((line) => (
                   <Card key={line.id} className="p-4">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
                           <Badge variant="outline">{line.category.toUpperCase()}</Badge>
-                          <Badge variant={line.isMoneyline ? "default" : "secondary"}>
+                          <Badge variant={line.isMoneyline ? "default" : "secondary"} className="bg-gray-200">
                             {line.isMoneyline ? "MONEYLINE" : "OVER/UNDER"}
                           </Badge>
                           {getStatusBadge(line.status)}
-                          {getResultBadge(line.result)}
+                          {line.winner ? getResultBadge(line.winner) : null}
                         </div>
                         <h3 className="font-semibold text-lg">{line.event}</h3>
                         <p className="text-sm text-gray-600 mb-2">
-                          {line.team1} vs {line.team2} • {line.date} at {line.time}
+                          {line.team1 ? line.team1 : "O"}{line.team2 ? " vs " : "/"}{line.team2 ? line.team2 : "U"} • {line.date}
                         </p>
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span>{line.totalBets} bets</span>
-                          <span>${line.totalAmount} volume</span>
+                          <span>{line.bets.length} bets</span>
+                          <span>${line.bets.reduce((sum, bet) => sum + bet.amount, 0)} volume</span>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
+                        {line.status === "open" ? <Button variant="outline" size="sm" className="hover:bg-gray-200">
+                          Close Line
+                        </Button> : null}
+                        {/*<AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="outline" size="sm">
                               <Trash2 className="h-4 w-4" />
@@ -549,12 +493,12 @@ export function AdminDashboard() {
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
-                        </AlertDialog>
+                        </AlertDialog>*/}
                       </div>
                     </div>
                   </Card>
                 ))}
-              </div>
+              </div>}
             </CardContent>
           </Card>
         </TabsContent>
@@ -567,8 +511,12 @@ export function AdminDashboard() {
               <CardDescription>View and manage all user bets</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingAllBets ? null : !allBets ? null : <div className="space-y-4">
-                {allBets.map((bet: BetWithLineAndUser) => (
+              {isLoadingAllBets ? <BetsSkeleton/> : !allBets ? null : <div className="space-y-4">
+                {allBets.sort((a, b) => {
+                  if (a.status !== "pending" && a.status !== "won" && a.status !== "lost") return -1
+                   if (b.status !== "pending" && b.status !== "won" && b.status !== "lost") return -1
+                  return statusOrder[a.status] - statusOrder[b.status]
+                }).map((bet: BetWithLineAndUser) => (
                   <Card key={bet.id} className="p-4">
                     <div className="flex justify-between items-start">
                       <div>
@@ -609,8 +557,16 @@ export function AdminDashboard() {
               <CardTitle>Set Results</CardTitle>
               <CardDescription>Set results for completed games to settle bets</CardDescription>
             </CardHeader>
+            <Dialog open={settingResult} >
+                  <DialogContent className="max-w-2xl bg-gray-100">
+                    <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
+            <span className="text-gray-600">Updating result...</span>
+          </div>
+                  </DialogContent>
+                </Dialog>
             <CardContent>
-              {isLoadingUnfinalizedBets ? null : !unfinalizedBets ? null : <div className="space-y-4">
+              {isLoadingUnfinalizedBets ? <BettingLinesSkeleton /> : !unfinalizedBets ? null : <div className="space-y-4">
                 {unfinalizedBets
                   .map((line) => (
                     <Card key={line.id} className="p-4">

@@ -92,6 +92,11 @@ query getUnfinalizedBettingLines {
   entities: [BettingLine]
 }
 
+query getAllBettingLines {
+  fn: import { getAllBettingLines } from "@src/bettinglines/queries",
+  entities: [BettingLine]
+}
+
 action updateBettingLine {
   fn: import { updateBettingLine } from "@src/bettinglines/actions",
   entities: [BettingLine]
