@@ -17,13 +17,16 @@ model User {
 
   tasks    Task[]
   tags     Tag[]
-  name     String @default("")
-  avatar   String @default("")
-  initials String @default("")
-  balance  Float  @default(1000)
-  winnings Float  @default(1000)
-  rank     Int    @default(0)
+  name     String  @default("")
+  avatar   String  @default("")
+  initials String  @default("")
+  balance  Float   @default(1000)
+  winnings Float   @default(1000)
+  rank     Int     @default(0)
   bets     Bet[]
+  leagueId String?
+  league   League? @relation(fields: [leagueId], references: [id])
+  isAdmin  Boolean @default(false)
 }
 
 model Task {
@@ -65,7 +68,18 @@ model BettingLine {
   category    String  @default("")
   status      String  @default("open")
   winner      String  @default("")
+  leagueId    String?
+  league      League? @relation(fields: [leagueId], references: [id])
   bets        Bet[]
+}
+
+model League {
+  id              String        @id @default(cuid())
+  name            String        @default("")
+  leagueCode      String        @unique @default("")
+  leagueManagerId String        @default("")
+  participants    User[]
+  bettingLines    BettingLine[]
 }
 
 model Bet {

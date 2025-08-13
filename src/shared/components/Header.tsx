@@ -39,6 +39,9 @@ return <header className="sticky top-0 z-10 bg-white border-b border-gray-200">
             <a href="/history"   className={`${location.pathname == "/history" ? " text-gray-900" : "text-gray-500"} text-sm font-medium`}>
               History
             </a>
+            {user && user.isAdmin ? <a href="/admin"   className={`${location.pathname == "/admin" ? " text-gray-900" : "text-gray-500"} text-sm font-medium`}>
+              Admin
+            </a> : null}
           </nav>
           <div className="flex items-center">
             <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-gray-100">

@@ -7,10 +7,13 @@ import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Badge } from "../components/ui/badge"
 import { Avatar, AvatarFallback } from "../components/ui/avatar"
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Trophy, Clock, DollarSign } from "lucide-react"
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Trophy, Clock, DollarSign, Loader2 } from "lucide-react"
 import { useQuery, getBettingLines, getAllUsers, createBet, getAllBets, updateBalance } from 'wasp/client/operations'
 import { BetWithLine } from "wasp/src/bet/queries"
 import { useAuth } from "wasp/client/auth"
+import { LeagueSelector } from "./league-selector"
+import { getMyLeague } from "wasp/client/operations"
+import { Dialog, DialogContent } from "../components/ui/dialog"
 
 
 //Only place bets depending on how much cash is allotted to a player and remove cash from account
@@ -113,6 +116,8 @@ export function BettingDashboard() {
 
   const { data: recentBets, isLoading: isLoadingBets } = useQuery(getAllBets)
 
+  const { data: myLeague, isLoading: isLoadingMyLeague } = useQuery(getMyLeague)
+
 
   const [selectedLine, setSelectedLine] = useState<BettingLine | null>(null)
   const [betAmount, setBetAmount] = useState<string>("10")
@@ -152,6 +157,8 @@ export function BettingDashboard() {
   
   const { data: user } = useAuth()
 
+  const [placingBet, setPlacingBet] = useState(false)
+
   const handlePlaceBet = () => {
     let selectionText = ""
     if (selectedTeam === "team1") {
@@ -165,6 +172,7 @@ export function BettingDashboard() {
     }
     void (async () => {
     if (parseFloat(betAmount) <= (user ? user.balance : 0)) {
+      setPlacingBet(true)
     await createBet({
       lineId: selectedLine?.id || "",
       amount: parseFloat(betAmount),
@@ -175,7 +183,8 @@ export function BettingDashboard() {
       if (user) {
          updateBalance({ betCost: parseFloat(betAmount) })
       }
-    
+
+    setPlacingBet(false)
     alert(
       `${selectedLine?.event}\nBet placed: $${betAmount} on ${selectionText.toLowerCase()} to win $${calculatePotentialWin().toFixed(2)}`,
     )
@@ -194,21 +203,59 @@ export function BettingDashboard() {
   const [selectedTab, setSelectedTab] = useState("all")
 
 
+  function LeagueLoadingSkeleton() {
+  return (
+    <Card className="mb-6">
+      <CardContent className="">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-20 bg-gray-200 rounded animate-pulse" />
+                <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
+                <div className="h-5 w-12 bg-gray-200 rounded animate-pulse" />
+              </div>
+            </div>
+          </div>
+          <div className="h-8 w-8 bg-gray-200 rounded animate-pulse" />
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    { !user?.leagueId ? null :
+      <>{isLoadingMyLeague ? <LeagueLoadingSkeleton /> : myLeague ? <LeagueSelector currentLeague={{
+        id: myLeague.id, name: myLeague.name, code: myLeague.leagueCode, memberCount: myLeague.participants.length, isOwner: user.isAdmin
+      }} onLeagueChange={async () => {
+            return null
+          }} /> : null}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <Tabs defaultValue="all" className="w-full" value={selectedTab} onValueChange={setSelectedTab}>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-900">Betting Lines</h2>
               <TabsList className="bg-gray-100 p-1">
                 <TabsTrigger className={`${selectedTab == "all" ? "bg-white drop-shadow-md" : ""}`} value="all">All</TabsTrigger>
-                <TabsTrigger className={`${selectedTab == "Get With" ? "bg-white drop-shadow-md" : ""}`} value="Get With">Get With</TabsTrigger>
+                <TabsTrigger className={`${selectedTab == "College" ? "bg-white drop-shadow-md" : ""}`} value="College">College</TabsTrigger>
                 <TabsTrigger className={`${selectedTab == "Dating" ? "bg-white drop-shadow-md" : ""}`} value="Dating">Dating</TabsTrigger>
                 <TabsTrigger className={`${selectedTab == "Achievements" ? "bg-white drop-shadow-md" : ""}`} value="Achievements">Achievements</TabsTrigger>
                 <TabsTrigger className={`${selectedTab == "Misc" ? "bg-white drop-shadow-md" : ""}`} value="Misc">Misc</TabsTrigger>
               </TabsList>
             </div>
+
+            <Dialog open={placingBet} >
+                  <DialogContent className="max-w-2xl bg-gray-100">
+                    <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
+            <span className="text-gray-600">Placing Bet...</span>
+          </div>
+                  </DialogContent>
+                </Dialog>
 
             <TabsContent value="all" className="space-y-4">
               {isLoading ? <BettingLinesSkeleton /> : bettingLines?.map((line) => (
@@ -322,102 +369,118 @@ export function BettingDashboard() {
               ))}
             </TabsContent>
 
-            {bettingLines ? <>{["Get With", "Dating", "Achievements", "Misc"].map((category) => (
+            {bettingLines ? <>{["College", "Dating", "Achievements", "Misc"].map((category) => (
               <TabsContent key={category} value={category} className="space-y-4">
                 {bettingLines
                   .filter((line) => line.category === category)
                   .map((line) => (
                     <Card key={line.id} className="overflow-hidden">
-                      <CardHeader className="bg-gray-50 py-3">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center space-x-2">
-                            <Badge variant="outline" className="text-xs font-medium">
-                              {line.category.toUpperCase()}
-                            </Badge>
-                            <Badge variant={line.isMoneyline ? "default" : "secondary"} className="text-xs font-medium">
-                              {line.isMoneyline ? "MONEYLINE" : "OVER/UNDER"}
-                            </Badge>
-                            <CardTitle className="text-sm font-medium">{line.event}</CardTitle>
+                  <CardHeader className="bg-gray-100 py-3">
+                    <div className="flex justify-between items-center pt-1">
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline" className="text-xs font-medium">
+                          {line.category.toUpperCase()}
+                        </Badge>
+                        <Badge variant={line.isMoneyline ? "default" : "secondary"} className="bg-black text-white text-xs font-medium">
+                          {line.isMoneyline ? "MONEYLINE" : "OVER/UNDER"}
+                        </Badge>
+                        <CardTitle className="text-sm font-medium">{line.event}</CardTitle>
+                      </div>
+                      <div className="flex items-center text-xs text-gray-500">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {line.date} • {line.time}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="py-4">
+                    {line.isMoneyline ? (
+                      // Moneyline betting
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <div className="font-medium">{line.team1}</div>
+                          <Button
+                            variant={selectedLine?.id === line.id && selectedTeam === "team1" ? "default" : "outline"}
+                             className={`mt-2 w-full justify-between transition-all duration-200 ${
+    selectedLine?.id === line.id && selectedTeam === "team1"
+      ? "border-2 border-blue-500 bg-blue-50 shadow-md"
+      : ""
+  }`}
+                            onClick={() => handleSelectLine(line, "team1")}
+                          >
+                            <span>Select</span>
+                            <span className={line.odds1 > 0 ? "text-green-600" : "text-red-600"}>
+                              {line.odds1 > 0 ? `+${line.odds1}` : line.odds1}
+                            </span>
+                          </Button>
+                        </div>
+                        <div className="px-4 text-center">
+                          <span className="text-sm font-medium text-gray-500">VS</span>
+                        </div>
+                        <div className="flex-1 text-right">
+                          <div className="font-medium">{line.team2}</div>
+                          <Button
+                            variant={selectedLine?.id === line.id && selectedTeam === "team2" ? "default" : "outline"}
+                             className={`mt-2 w-full justify-between transition-all duration-200 ${
+    selectedLine?.id === line.id && selectedTeam === "team2"
+      ? "border-2 border-blue-500 bg-blue-50 shadow-md"
+      : ""
+  }`}
+                            onClick={() => handleSelectLine(line, "team2")}
+                          >
+                            <span>Select</span>
+                            <span className={line.odds2 > 0 ? "text-green-600" : "text-red-600"}>
+                              {line.odds2 > 0 ? `+${line.odds2}` : line.odds2}
+                            </span>
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      // Over/Under betting
+                      <div className="space-y-4">
+                        <div className="text-center">
+                          <div className="text-lg font-semibold mb-2">{line.event} </div>
+                          <div className="text-sm text-gray-600">O/U {line.total}</div>
+                        </div>
+                        <div className="flex justify-between items-center gap-4">
+                          <div className="flex-1">
+                            <div className="font-medium text-center mb-2">Over {line.total}</div>
+                            <Button
+                              variant={selectedLine?.id === line.id && selectedTeam === "over" ? "default" : "outline"}
+                              className={`mt-2 w-full justify-between transition-all duration-200 ${
+    selectedLine?.id === line.id && selectedTeam === "over"
+      ? "border-2 border-blue-500 bg-blue-50 shadow-md"
+      : ""
+  }`}
+                              onClick={() => handleSelectLine(line, "over")}
+                            >
+                              <span>Select</span>
+                              <span className={(line.overOdds || 0) > 0 ? "text-green-600" : "text-red-600"}>
+                                {(line.overOdds || 0) > 0 ? `+${line.overOdds}` : line.overOdds}
+                              </span>
+                            </Button>
                           </div>
-                          <div className="flex items-center text-xs text-gray-500">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {line.date} • {line.time}
+                          <div className="flex-1">
+                            <div className="font-medium text-center mb-2">Under {line.total}</div>
+                            <Button
+                              variant={selectedLine?.id === line.id && selectedTeam === "under" ? "default" : "outline"}
+                               className={`mt-2 w-full justify-between transition-all duration-200 ${
+    selectedLine?.id === line.id && selectedTeam === "under"
+      ? "border-2 border-blue-500 bg-blue-50 shadow-md"
+      : ""
+  }`}
+                              onClick={() => handleSelectLine(line, "under")}
+                            >
+                              <span>Select</span>
+                              <span className={(line.underOdds || 0) > 0 ? "text-green-600" : "text-red-600"}>
+                                {(line.underOdds || 0) > 0 ? `+${line.underOdds}` : line.underOdds}
+                              </span>
+                            </Button>
                           </div>
                         </div>
-                      </CardHeader>
-                      <CardContent className="py-4">
-                        {line.isMoneyline ? (
-                          // Moneyline betting
-                          <div className="flex justify-between items-center">
-                            <div className="flex-1">
-                              <div className="font-medium">{line.team1}</div>
-                              <Button
-                                variant={selectedLine?.id === line.id && selectedTeam === "team1" ? "default" : "outline"}
-                                className="mt-2 w-full justify-between"
-                                onClick={() => handleSelectLine(line, "team1")}
-                              >
-                                <span>Select</span>
-                                <span className={line.odds1 > 0 ? "text-green-600" : "text-red-600"}>
-                                  {line.odds1 > 0 ? `+${line.odds1}` : line.odds1}
-                                </span>
-                              </Button>
-                            </div>
-                            <div className="px-4 text-center">
-                              <span className="text-sm font-medium text-gray-500">VS</span>
-                            </div>
-                            <div className="flex-1 text-right">
-                              <div className="font-medium">{line.team2}</div>
-                              <Button
-                                variant={selectedLine?.id === line.id && selectedTeam === "team2" ? "default" : "outline"}
-                                className="mt-2 w-full justify-between"
-                                onClick={() => handleSelectLine(line, "team2")}
-                              >
-                                <span>Select</span>
-                                <span className={line.odds2 > 0 ? "text-green-600" : "text-red-600"}>
-                                  {line.odds2 > 0 ? `+${line.odds2}` : line.odds2}
-                                </span>
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          // Over/Under betting
-                          <div className="space-y-4">
-                            <div className="text-center">
-                              <div className="text-lg font-semibold mb-2">Total Points: {line.total}</div>
-                              <div className="text-sm text-gray-600">{line.team1} vs {line.team2}</div>
-                            </div>
-                            <div className="flex justify-between items-center gap-4">
-                              <div className="flex-1">
-                                <div className="font-medium text-center mb-2">Over {line.total}</div>
-                                <Button
-                                  variant={selectedLine?.id === line.id && selectedTeam === "over" ? "default" : "outline"}
-                                  className="w-full justify-between"
-                                  onClick={() => handleSelectLine(line, "over")}
-                                >
-                                  <span>Select</span>
-                                  <span className={(line.overOdds || 0) > 0 ? "text-green-600" : "text-red-600"}>
-                                    {(line.overOdds || 0) > 0 ? `+${line.overOdds}` : line.overOdds}
-                                  </span>
-                                </Button>
-                              </div>
-                              <div className="flex-1">
-                                <div className="font-medium text-center mb-2">Under {line.total}</div>
-                                <Button
-                                  variant={selectedLine?.id === line.id && selectedTeam === "under" ? "default" : "outline"}
-                                  className="w-full justify-between"
-                                  onClick={() => handleSelectLine(line, "under")}
-                                >
-                                  <span>Select</span>
-                                  <span className={(line.underOdds || 0) > 0 ? "text-green-600" : "text-red-600"}>
-                                    {(line.underOdds || 0) > 0 ? `+${line.underOdds}` : line.underOdds}
-                                  </span>
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
                   ))}
               </TabsContent>
             ))}</> : null}
@@ -610,7 +673,8 @@ export function BettingDashboard() {
             </CardFooter>
           </Card>
         </div>
-      </div>
+      </div></>
+}
     </div>
   )
 }

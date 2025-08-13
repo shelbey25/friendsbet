@@ -9,6 +9,7 @@ if (!context.user) {
   
   return context.entities.BettingLine.findMany({
     where: {
+      leagueId: context.user.leagueId,
       status: "open",
     },
   });
@@ -21,6 +22,7 @@ if (!context.user) {
   
   return context.entities.BettingLine.findMany({
     where: {
+      leagueId: context.user.leagueId,
       status: {
         in: ["open", "closed"]
       },
@@ -38,6 +40,9 @@ if (!context.user) {
   const statusOrder = { "open": 1, "closed": 2, "complete": 3 };
   
   const bettingLines = await context.entities.BettingLine.findMany({
+    where: {
+      leagueId: context.user.leagueId,
+    },
     include: {
       bets: {}
     }

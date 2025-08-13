@@ -1,12 +1,20 @@
+import { useAuth } from "wasp/client/auth";
 import "./App.css";
 import { BettingDashboard } from "./betting/FriendsBet"
+import { LeagueSelector } from "./betting/league-selector";
 import { Header } from "./shared/components/Header";
 import { Outlet } from "react-router-dom";
 
 export function App() {
+    const { data: user, refetch: refetchUser, isLoading } = useAuth()
+  
   return ( <main className="flex min-h-screen w-full flex-col bg-neutral-50 text-neutral-800">
       <Header />
-      <Outlet />
+      {isLoading ?  <Outlet /> : !user?.leagueId ? <LeagueSelector currentLeague={null} onLeagueChange={async () => {
+      await refetchUser()
+      return null
+    }} /> :
+      <Outlet /> }
     </main>)
     
   return (

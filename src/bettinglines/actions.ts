@@ -60,6 +60,7 @@ export const createBettingLine: CreateBettingLine<CreateBetlineArgs, BettingLine
 
   return context.entities.BettingLine.create({
     data: {
+      leagueId: context.user.leagueId,
       isMoneyline,
       category,
       event,

@@ -402,7 +402,7 @@ export function AdminDashboard() {
                             </SelectTrigger>
                             <SelectContent className="bg-white">
                               <SelectItem value="Misc">Misc</SelectItem>
-                              <SelectItem value="Get With">Get With</SelectItem>
+                              <SelectItem value="College">College</SelectItem>
                               <SelectItem value="Dating">Dating</SelectItem>
                               <SelectItem value="Achievements">Achievements</SelectItem>
                             </SelectContent>
@@ -609,7 +609,7 @@ export function AdminDashboard() {
                             </SelectTrigger>
                             <SelectContent className="bg-white">
                               <SelectItem value="Misc">Misc</SelectItem>
-                              <SelectItem value="Get With">Get With</SelectItem>
+                              <SelectItem value="College">College</SelectItem>
                               <SelectItem value="Dating">Dating</SelectItem>
                               <SelectItem value="Achievements">Achievements</SelectItem>
                             </SelectContent>

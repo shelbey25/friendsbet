@@ -97,9 +97,24 @@ query getAllBettingLines {
   entities: [BettingLine]
 }
 
+query getMyLeague {
+  fn: import { getMyLeague } from "@src/users/queries",
+  entities: [User, League]
+}
+
+action joinLeague {
+  fn: import { joinLeague } from "@src/users/actions",
+  entities: [User]
+}
+
 action updateBettingLineFull {
   fn: import { updateBettingLineFull } from "@src/bettinglines/actions",
   entities: [BettingLine]
+}
+
+action createLeague {
+  fn: import { createLeague } from "@src/league/actions",
+  entities: [League, User]
 }
 
 action updateBettingLine {

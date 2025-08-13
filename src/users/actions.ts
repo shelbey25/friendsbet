@@ -1,7 +1,7 @@
 import { User } from "wasp/entities";
 import { HttpError } from "wasp/server";
 import {
-  UpdateBalance
+  UpdateBalance, JoinLeague
 } from "wasp/server/operations";
 
 type UpdateBalanceArgs = {
@@ -23,6 +23,31 @@ export const updateBalance: UpdateBalance<UpdateBalanceArgs, User> = async (
     },
     data: {
       balance: context.user.balance - betCost,
+    },
+  });
+};
+
+type JoinLeagueArgs = {
+  code: string;
+};
+export const joinLeague: JoinLeague<JoinLeagueArgs, User> = async (
+  {code},
+  context,
+) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  return context.entities.User.update({
+    where: {
+        id: context.user.id,
+    },
+    data: {
+      league: { 
+        connect: {
+          leagueCode: code,
+        }
+      }
     },
   });
 };
